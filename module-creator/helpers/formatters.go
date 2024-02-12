@@ -12,5 +12,7 @@ func ModifyTemplateString(template string, fileData model.FileData) string {
 
 	finalConfigString := strings.ReplaceAll(str2WithReplacedModule, "[SnakeCaseModuleName]", fileData.SnakeCaseFileName)
 
-	return strings.ReplaceAll(finalConfigString, "[back-quote]", "`")
+	final2ConfigString := strings.ReplaceAll(finalConfigString, "[CamelCaseModuleName]", fileData.CamelCaseFileName)
+
+	return strings.ReplaceAll(final2ConfigString, "[back-quote]", "`")
 }

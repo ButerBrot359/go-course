@@ -2,11 +2,13 @@ package main
 
 import (
 	"bufio"
+	"consts"
 	"fileconfig"
 	"flag"
 	"fmt"
 	"log"
 	"model"
+	"models"
 	"os"
 	"path/filepath"
 	"strings"
@@ -56,8 +58,11 @@ func main() {
 	}
 
 	folders := []string{"api", "config", "consts", "models", "ui", "utils"}
+	
 	generateFoldersInPage(moduleDirPath, folders)
 	generateConfigContent(filepath.Join(moduleDirPath, "config"), newFileData)
+	generateConstsContent(filepath.Join(moduleDirPath, "consts"), newFileData)
+	generateFormSchemaContent(filepath.Join(moduleDirPath, "models"), newFileData)
 
 	// generateMainContent(newFileData, moduleDirPath)
 	// generateDetailsModal(newFileData, moduleDirPath)
@@ -392,3 +397,38 @@ func generateConfigContent(configFilePath string, newFileData *model.FileData) {
 	}
 }
 
+func generateConstsContent(configFilePath string, newFileData *model.FileData) {
+	fileName := "urlPaths";
+
+	rootFiles := [1]model.CustomFileProperty{
+		{Name: fileName, Extensions: []string{"jsx"}, BuilderFunc: consts.CreateUrlPaths},
+	}
+
+	for _, fileProps := range rootFiles {
+		fullFileName := model.AddExtensions(fileProps.Name, fileProps.Extensions...)
+
+		filePath := filepath.Join(configFilePath, fullFileName)
+
+		fileConent := fileProps.BuilderFunc(*newFileData)
+
+		createFileAndWriteData(filePath, fileConent)
+	}
+}
+
+func generateFormSchemaContent(configFilePath string, newFileData *model.FileData) {
+	fileName := fmt.Sprintf(`%vFormSchema`, newFileData.CamelCaseFileName);
+
+	rootFiles := [1]model.CustomFileProperty{
+		{Name: fileName, Extensions: []string{"js"}, BuilderFunc: models.CreateFormSchema},
+	}
+
+	for _, fileProps := range rootFiles {
+		fullFileName := model.AddExtensions(fileProps.Name, fileProps.Extensions...)
+
+		filePath := filepath.Join(configFilePath, fullFileName)
+
+		fileConent := fileProps.BuilderFunc(*newFileData)
+
+		createFileAndWriteData(filePath, fileConent)
+	}
+}
