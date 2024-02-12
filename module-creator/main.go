@@ -38,18 +38,15 @@ func main() {
 
 	fmt.Println(newFileData)
 
-	pageModuleName := fmt.Sprintf(`%vPage`, newFileData.PascalCaseFileName);
+	// pageModuleName := fmt.Sprintf(`%vPage`, newFileData.PascalCaseFileName);
+	// moduleDirPath := filepath.Join(newFileData.RootDirectory,"src", "app", "pages", pageModuleName)
 
-	moduleDirPath := filepath.Join(newFileData.RootDirectory,"src", "app", "pages", pageModuleName)
+	configDirPath := filepath.Join(newFileData.RootDirectory, "src", "app", "configs")
 
-	fmt.Println(moduleDirPath)
-
-	// configDirPath := filepath.Join(newFileData.RootDirectory, "src", "app", "configs")
-
-	// if err := rewriteConfigFiles(configDirPath, newFileData); err != nil {
-	// 	fmt.Println(err)
-	// 	return
-	// }
+	if err := rewriteConfigFiles(configDirPath, newFileData); err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	// if err := createDir(moduleDirPath); err != nil {
 	// 	log.Fatal("Folder already exist")
@@ -170,19 +167,28 @@ func main() {
 func rewriteConfigFiles(configDirPath string, newFileData *model.FileData) error {
 	urlConfigFilePath := filepath.Join(configDirPath, "urlsConfig.js");
 	routesConfigFilePath := filepath.Join(configDirPath, "routesConfig.js");
+	translateConfigFilePath := filepath.Join(configDirPath, "navigation-i18n", "en.js")
 
-	if err := rewriteUrlConfig(urlConfigFilePath, newFileData.SnakeCaseFileName); err != nil {
+	if err := rewriteUrlConfig(urlConfigFilePath, newFileData); err != nil {
 		return err
 	}
 
 	if err := rewriteRoutesConfig(routesConfigFilePath, newFileData); err != nil {
 		return err
 	}
+
+	if err := rewriteTranslateConfig(translateConfigFilePath,newFileData); err != nil {
+		return err
+	}
 	
 	return nil
 }
 
-func rewriteUrlConfig(filePath, urlName string) error {
+func rewriteUrlConfig(filePath string, newFileData *model.FileData) error {
+	pageURLPath := fmt.Sprintf(`%v_PAGE_URL_PATH`, newFileData.UppercaseTitle);
+	importLine := fmt.Sprintf(`import { %v } from "../pages/%vPage";`, pageURLPath, newFileData.PascalCaseFileName);
+
+
 	file, err := os.OpenFile(filePath, os.O_RDWR, 0644)
     if err != nil {
         fmt.Println(err)
@@ -192,11 +198,13 @@ func rewriteUrlConfig(filePath, urlName string) error {
 
 	scanner := bufio.NewScanner(file)
     var lines []string
+	lines = append(lines, fmt.Sprintf(`%v`, importLine) + "\n")
+
 	isInsideUrlArr := false;
 
     for scanner.Scan() {
-		if strings.Contains(scanner.Text(), urlName) {
-			return fmt.Errorf("Module with this url already exist")
+		if strings.Contains(scanner.Text(), pageURLPath) {
+			return fmt.Errorf("Module with this URL config already exist")
 		}
 
 		if strings.Contains(scanner.Text(), "urls") {
@@ -204,7 +212,7 @@ func rewriteUrlConfig(filePath, urlName string) error {
 		}
 
 		if strings.Contains(scanner.Text(), "];") && isInsideUrlArr {
-			lines = append(lines, fmt.Sprintf("\t" + `"%v"`, urlName) + "\n")
+			lines = append(lines, fmt.Sprintf("\t" + `%v`, pageURLPath) + "\n")
 			isInsideUrlArr = false
 		}
 
@@ -228,8 +236,8 @@ func rewriteUrlConfig(filePath, urlName string) error {
 }
 
 func rewriteRoutesConfig(filePath string, fileData *model.FileData) error {
-	configName := fmt.Sprintf(`%vConfig`, fileData.PascalCaseFileName)
-	importLine := fmt.Sprintf(`import { %v } from "src/app/pages/%v/%v";`, configName, fileData.SnakeCaseFileName, configName);
+	configName := fmt.Sprintf(`%vPageRoutesConfig`, fileData.PascalCaseFileName)
+	importLine := fmt.Sprintf(`import { %v } from "../pages/%vPage";`, configName, fileData.PascalCaseFileName);
 
 	file, err := os.OpenFile(filePath, os.O_RDWR, 0644)
     if err != nil {
@@ -246,7 +254,7 @@ func rewriteRoutesConfig(filePath string, fileData *model.FileData) error {
 
     for scanner.Scan() {
 		if strings.Contains(scanner.Text(), configName) {
-			return fmt.Errorf("Module with this config name already exist")
+			return fmt.Errorf("Module with this ROUTE config name already exist")
 		}
 
 		if strings.Contains(scanner.Text(), "const routeConfigs") {
@@ -255,6 +263,56 @@ func rewriteRoutesConfig(filePath string, fileData *model.FileData) error {
 
 		if strings.Contains(scanner.Text(), "];") && isInsideRoutesArr {
 			lines = append(lines, fmt.Sprintf("\t" + "%v,", configName))
+			isInsideRoutesArr = false
+		}
+
+        lines = append(lines, scanner.Text())
+    }
+
+    // Объединяем новую строку с текущим содержимым файла
+    updatedContent := strings.Join(lines, "\n")
+
+    // Устанавливаем позицию в начало файла
+    file.Seek(0, 0)
+
+    // Записываем обновленное содержимое в файл
+    _, err = file.WriteString(updatedContent)
+    if err != nil {
+        fmt.Println(err)
+        return nil
+    }
+
+	return nil
+}
+
+func rewriteTranslateConfig(filePath string, fileData *model.FileData) error {
+	configName := fmt.Sprintf(`%vMenuTranslate`, fileData.PascalCaseFileName)
+	importLine := fmt.Sprintf(`import { %v } from "src/app/pages/%vPage";`, configName, fileData.PascalCaseFileName);
+
+	file, err := os.OpenFile(filePath, os.O_RDWR, 0644)
+    if err != nil {
+        fmt.Println(err)
+        return nil
+    }
+    defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+    var lines []string
+	lines = append(lines, fmt.Sprintf(`%v`, importLine) + "\n")
+
+	isInsideRoutesArr := false;
+
+    for scanner.Scan() {
+		if strings.Contains(scanner.Text(), configName) {
+			return fmt.Errorf("Module with this TRANSLATE config name already exist")
+		}
+
+		if strings.Contains(scanner.Text(), "const locale") {
+			isInsideRoutesArr = true
+		}
+
+		if strings.Contains(scanner.Text(), "};") && isInsideRoutesArr {
+			lines = append(lines, fmt.Sprintf("\t" + "...%v,", configName))
 			isInsideRoutesArr = false
 		}
 
