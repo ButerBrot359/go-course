@@ -1,0 +1,14 @@
+@import "src/app/styles/mixins.scss";
+
+	.sidebar-form {
+	  @include sidebar-form-wrapper();
+	}
+	
+	.main {
+	  @include sidebar-form-main();
+	}
+	
+	.footer {
+	  @include sidebar-form-footer();
+	}
+	

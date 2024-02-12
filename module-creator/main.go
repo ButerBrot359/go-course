@@ -7,11 +7,14 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"modals"
 	"model"
 	"models"
 	"os"
 	"path/filepath"
 	"strings"
+	"templates"
+	"ui"
 )
 
 func main() {
@@ -40,17 +43,15 @@ func main() {
 	newFileData.SetUppercaseTitle()
 	newFileData.SetRootDirectory(currentDirectory)
 
-	fmt.Println(newFileData)
-
 	pageModuleName := fmt.Sprintf(`%vPage`, newFileData.PascalCaseFileName);
 	moduleDirPath := filepath.Join(newFileData.RootDirectory,"src", "app", "pages", pageModuleName)
 
-	// configDirPath := filepath.Join(newFileData.RootDirectory, "src", "app", "configs")
+	configDirPath := filepath.Join(newFileData.RootDirectory, "src", "app", "configs")
 
-	// if err := rewriteConfigFiles(configDirPath, newFileData); err != nil {
-	// 	fmt.Println(err)
-	// 	return
-	// }
+	if err := rewriteConfigFiles(configDirPath, newFileData); err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	if err := createDir(moduleDirPath); err != nil {
 		log.Fatal("Folder already exist")
@@ -58,123 +59,42 @@ func main() {
 	}
 
 	folders := []string{"api", "config", "consts", "models", "ui", "utils"}
-	
 	generateFoldersInPage(moduleDirPath, folders)
+
+	pageUiFolder := filepath.Join(moduleDirPath, "ui", fmt.Sprintf(`%vPage`, newFileData.PascalCaseFileName))
+	if err := createDir(pageUiFolder); err != nil {
+		log.Fatal("Folder already exist")
+		return
+	}
+
+	pageModalsFolder := filepath.Join(moduleDirPath, "ui", "Modals")
+	if err := createDir(pageModalsFolder); err != nil {
+		log.Fatal("Folder already exist")
+		return
+	}
+
+	pageModalForm := filepath.Join(pageModalsFolder, fmt.Sprintf(`%vForm`, newFileData.PascalCaseFileName))
+	if err := createDir(pageModalForm); err != nil {
+		log.Fatal("Folder already exist")
+		return
+	}
+
+	pageModalView := filepath.Join(pageModalsFolder, fmt.Sprintf(`%vView`, newFileData.PascalCaseFileName))
+	if err := createDir(pageModalView); err != nil {
+		log.Fatal("Folder already exist")
+		return
+	}
+
 	generateConfigContent(filepath.Join(moduleDirPath, "config"), newFileData)
 	generateConstsContent(filepath.Join(moduleDirPath, "consts"), newFileData)
 	generateFormSchemaContent(filepath.Join(moduleDirPath, "models"), newFileData)
-
-	// generateMainContent(newFileData, moduleDirPath)
-	// generateDetailsModal(newFileData, moduleDirPath)
-
-	// if newFileData.HasTabs {
-	// 	generateTabsContent(newFileData, moduleDirPath)
-	// }
+	generateUiPage(pageUiFolder, newFileData)
+	generateIndexFile(moduleDirPath, newFileData)
+	generateModalForm(pageModalForm, newFileData)
+	generateModalView(pageModalView, newFileData)
 
 }
 
-// func generateMainContent(newFileData *model.FileData, moduleDirPath string) {
-// 	rootFiles := [4]model.FileProperty{
-// 		{Postfix: "App", Extensions: []string{"jsx"}, BuilderFunc: templates.GenerateMainAppPage},
-// 		{Postfix: "Content", Extensions: []string{"jsx"}, BuilderFunc: templates.GenerateContentPage},
-// 		{Postfix: "Config", Extensions: []string{"js"}, BuilderFunc: templates.CreateAppConfig},
-// 		{Postfix: "", Extensions: []string{"module", "scss"}, BuilderFunc: templates.GenerateAppStyle},
-// 	}
-
-// 	for _, fileProps := range rootFiles {
-// 		fullFileName := model.AddExtensions(newFileData.AddPostfix(fileProps.Postfix), fileProps.Extensions...)
-
-// 		filePath := filepath.Join(moduleDirPath, fullFileName)
-
-// 		var fileConent string
-
-// 		if newFileData.HasTabs {
-// 			fileConent = fileProps.BuilderFunc(model.TabsFileType, *newFileData)
-// 		} else {
-// 			fileConent = fileProps.BuilderFunc(model.DefaultFileType, *newFileData)
-// 		}
-
-
-// 		// createFileAndWriteData(filePath, fileConent)
-// 	}
-// }
-
-// func generateDetailsModal(newFileData *model.FileData, moduleDirPath string) {
-// 	modalDir := filepath.Join(moduleDirPath, "modals")
-// 	if err := createDir(modalDir); err != nil {
-// 		log.Fatal("Folder already exist")
-// 		return
-// 	}
-
-// 	rootFiles := [2]model.CustomFileProperty{
-// 		{Name: "DetailsFormWrapper", Extensions: []string{"jsx"}, BuilderFunc: modals.CreateDetailsModal},
-// 		{Name: "DetailsFormWrapper", Extensions: []string{"module", "scss"}, BuilderFunc: modals.CreateDetailsStyle},
-// 	}
-
-// 	for _, fileProps := range rootFiles {
-// 		fullFileName := model.AddExtensions(fileProps.Name, fileProps.Extensions...)
-
-// 		filePath := filepath.Join(modalDir, fullFileName)
-
-// 		fileConent := fileProps.BuilderFunc(*newFileData)
-
-// 		createFileAndWriteData(filePath, fileConent)
-// 	}
-
-// 	createDetailsProxyfolder(newFileData, modalDir)
-// }
-
-// func createDetailsProxyfolder(newFileData *model.FileData, moduleDirPath string) {
-// 	modalDir := filepath.Join(moduleDirPath, "details-form")
-// 	if err := createDir(modalDir); err != nil {
-// 		log.Fatal("Folder already exist")
-// 		return
-// 	}
-
-// 	rootFiles := []model.CustomFileProperty{
-// 		{Name: "index", Extensions: []string{"jsx"}, BuilderFunc: details.CreateDetailProxy},
-// 		{Name: "index", Extensions: []string{"module", "scss"}, BuilderFunc: details.CreateDetailProxyStyle},
-// 		{Name: "DetailsFormModel", Extensions: []string{"js"}, BuilderFunc: details.CreateDetailModel},
-// 		{Name: "DetailsViewForm", Extensions: []string{"jsx"}, BuilderFunc: details.CreateDetailView},
-// 		{Name: "DetailsCreateForm", Extensions: []string{"jsx"}, BuilderFunc: details.CreateDetailCreate},
-// 		{Name: "DetailsEditForm", Extensions: []string{"jsx"}, BuilderFunc: details.CreateDetailEdit},
-// 	}
-
-// 	for _, fileProps := range rootFiles {
-// 		fullFileName := model.AddExtensions(fileProps.Name, fileProps.Extensions...)
-
-// 		filePath := filepath.Join(modalDir, fullFileName)
-
-// 		fileConent := fileProps.BuilderFunc(*newFileData)
-
-// 		createFileAndWriteData(filePath, fileConent)
-// 	}
-// }
-
-// func generateTabsContent(newFileData *model.FileData, moduleDirPath string) {
-// 	tabsDir := filepath.Join(moduleDirPath, "tabs")
-// 	if err := createDir(tabsDir); err != nil {
-// 		log.Fatal("Folder already exist")
-// 		return
-// 	}
-
-// 	rootFiles := []model.CustomFileProperty{
-// 		{Name: "index", Extensions: []string{"jsx"}, BuilderFunc: tabs.CreateProxyTab},
-// 		{Name: "index", Extensions: []string{"module", "scss"}, BuilderFunc: tabs.CreateProxyStyle},
-// 		{Name: "FirstTab", Extensions: []string{"jsx"}, BuilderFunc: tabs.CreateFirstTab},
-// 		{Name: "SecondTab", Extensions: []string{"jsx"}, BuilderFunc: tabs.CreateSecondTab},
-// 	}
-
-// 	for _, fileProps := range rootFiles {
-// 		fullFileName := model.AddExtensions(fileProps.Name, fileProps.Extensions...)
-
-// 		filePath := filepath.Join(tabsDir, fullFileName)
-
-// 		fileConent := fileProps.BuilderFunc(*newFileData)
-
-// 		createFileAndWriteData(filePath, fileConent)
-// 	}
-// }
 
 func rewriteConfigFiles(configDirPath string, newFileData *model.FileData) error {
 	urlConfigFilePath := filepath.Join(configDirPath, "urlsConfig.js");
@@ -420,6 +340,85 @@ func generateFormSchemaContent(configFilePath string, newFileData *model.FileDat
 
 	rootFiles := [1]model.CustomFileProperty{
 		{Name: fileName, Extensions: []string{"js"}, BuilderFunc: models.CreateFormSchema},
+	}
+
+	for _, fileProps := range rootFiles {
+		fullFileName := model.AddExtensions(fileProps.Name, fileProps.Extensions...)
+
+		filePath := filepath.Join(configFilePath, fullFileName)
+
+		fileConent := fileProps.BuilderFunc(*newFileData)
+
+		createFileAndWriteData(filePath, fileConent)
+	}
+}
+
+func generateIndexFile(configFilePath string, newFileData *model.FileData) {
+	fileName := "index"
+
+	rootFiles := [1]model.CustomFileProperty{
+		{Name: fileName, Extensions: []string{"js"}, BuilderFunc: templates.CreateIndexFile},
+	}
+
+	for _, fileProps := range rootFiles {
+		fullFileName := model.AddExtensions(fileProps.Name, fileProps.Extensions...)
+
+		filePath := filepath.Join(configFilePath, fullFileName)
+
+		fileConent := fileProps.BuilderFunc(*newFileData)
+
+		createFileAndWriteData(filePath, fileConent)
+	}
+}
+
+func generateUiPage(configFilePath string, newFileData *model.FileData) {
+	pageFileName := fmt.Sprintf(`%vPage`, newFileData.PascalCaseFileName);
+	contentFileName := fmt.Sprintf(`%vContent`, newFileData.PascalCaseFileName);
+
+
+	rootFiles := [3]model.CustomFileProperty{
+		{Name: pageFileName, Extensions: []string{"jsx"}, BuilderFunc: ui.CreatePage},
+		{Name: contentFileName, Extensions: []string{"jsx"}, BuilderFunc: ui.CreatePageContent},
+		{Name: contentFileName, Extensions: []string{"module", "scss"}, BuilderFunc: ui.CreateContentStyles},
+
+	}
+
+	for _, fileProps := range rootFiles {
+		fullFileName := model.AddExtensions(fileProps.Name, fileProps.Extensions...)
+
+		filePath := filepath.Join(configFilePath, fullFileName)
+
+		fileConent := fileProps.BuilderFunc(*newFileData)
+
+		createFileAndWriteData(filePath, fileConent)
+	}
+}
+
+func generateModalForm(configFilePath string, newFileData *model.FileData) {
+	pageFileName := fmt.Sprintf(`%vForm`, newFileData.PascalCaseFileName);
+
+	rootFiles := [2]model.CustomFileProperty{
+		{Name: pageFileName, Extensions: []string{"jsx"}, BuilderFunc: modals.CreateModalForm},
+		{Name: pageFileName, Extensions: []string{"module", "scss"}, BuilderFunc: modals.CreateModalFormStyle},
+	}
+
+	for _, fileProps := range rootFiles {
+		fullFileName := model.AddExtensions(fileProps.Name, fileProps.Extensions...)
+
+		filePath := filepath.Join(configFilePath, fullFileName)
+
+		fileConent := fileProps.BuilderFunc(*newFileData)
+
+		createFileAndWriteData(filePath, fileConent)
+	}
+}
+
+func generateModalView(configFilePath string, newFileData *model.FileData) {
+	pageFileName := fmt.Sprintf(`%vView`, newFileData.PascalCaseFileName);
+
+	rootFiles := [2]model.CustomFileProperty{
+		{Name: pageFileName, Extensions: []string{"jsx"}, BuilderFunc: modals.CreateModalView},
+		{Name: pageFileName, Extensions: []string{"module", "scss"}, BuilderFunc: modals.CreateModalViewStyle},
 	}
 
 	for _, fileProps := range rootFiles {

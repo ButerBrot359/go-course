@@ -1,3 +1,5 @@
+import { HelloWorldMenuTranslate } from "src/app/pages/HelloWorldPage";
+
 import { RepairPlanNearestMenuTitle } from "src/app/pages/RepairPlanNearestPage";
 import { ELSProceduresMenuTranslate } from "src/app/pages/ELSProceduresPage";
 import { DistanceMenuTranslate } from "src/app/pages/DistancePage";
@@ -60,6 +62,7 @@ const locale = {
   ...InstructionsJournalMenuTranslate,
   ...PlanSettingsMenuTranslate,
   ...NodesMenuTranslate,
+	...HelloWorldMenuTranslate,
 };
 
 export default locale;

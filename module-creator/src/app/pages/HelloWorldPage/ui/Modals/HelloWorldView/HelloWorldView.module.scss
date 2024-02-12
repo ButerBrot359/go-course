@@ -1,0 +1,7 @@
+@import "src/app/styles/mixins.scss";
+
+	.hello-world-view {
+	  @include sidebar-form-wrapper();
+	}
+	
+	

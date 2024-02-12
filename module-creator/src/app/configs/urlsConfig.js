@@ -1,3 +1,5 @@
+import { HELLO_WORLD_PAGE_URL_PATH } from "../pages/HelloWorldPage";
+
 export const urls = [
   "operative-reference",
   "negotiable",
@@ -33,4 +35,6 @@ export const urls = [
   "settings",
   "clients-test",
   "branch-commands",
+	HELLO_WORLD_PAGE_URL_PATH
+
 ];

@@ -1,0 +1,13 @@
+@import "src/app/styles/mixins.scss";
+
+	.hello-world {
+	  padding: 15px;
+	}
+	
+	.hello-world__table {
+	  @include grid-table-style();
+	
+	  height: calc(100vh - 6.4rem - 90px);
+	}
+	
+	

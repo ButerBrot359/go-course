@@ -1,3 +1,5 @@
+import { HelloWorldPageRoutesConfig } from "../pages/HelloWorldPage";
+
 import { Navigate } from "react-router-dom";
 
 import FuseUtils from "@fuse/utils";
@@ -59,6 +61,7 @@ const routeConfigs = [
   ClientsConfig,
   PlanSettingsConfig,
   BranchCommandsConfig,
+	HelloWorldPageRoutesConfig,
 ];
 
 const routes = [
