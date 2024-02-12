@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"fileconfig"
 	"flag"
 	"fmt"
+	"log"
 	"model"
 	"os"
 	"path/filepath"
@@ -38,20 +40,24 @@ func main() {
 
 	fmt.Println(newFileData)
 
-	// pageModuleName := fmt.Sprintf(`%vPage`, newFileData.PascalCaseFileName);
-	// moduleDirPath := filepath.Join(newFileData.RootDirectory,"src", "app", "pages", pageModuleName)
+	pageModuleName := fmt.Sprintf(`%vPage`, newFileData.PascalCaseFileName);
+	moduleDirPath := filepath.Join(newFileData.RootDirectory,"src", "app", "pages", pageModuleName)
 
-	configDirPath := filepath.Join(newFileData.RootDirectory, "src", "app", "configs")
+	// configDirPath := filepath.Join(newFileData.RootDirectory, "src", "app", "configs")
 
-	if err := rewriteConfigFiles(configDirPath, newFileData); err != nil {
-		fmt.Println(err)
+	// if err := rewriteConfigFiles(configDirPath, newFileData); err != nil {
+	// 	fmt.Println(err)
+	// 	return
+	// }
+
+	if err := createDir(moduleDirPath); err != nil {
+		log.Fatal("Folder already exist")
 		return
 	}
 
-	// if err := createDir(moduleDirPath); err != nil {
-	// 	log.Fatal("Folder already exist")
-	// 	return
-	// }
+	folders := []string{"api", "config", "consts", "models", "ui", "utils"}
+	generateFoldersInPage(moduleDirPath, folders)
+	generateConfigContent(filepath.Join(moduleDirPath, "config"), newFileData)
 
 	// generateMainContent(newFileData, moduleDirPath)
 	// generateDetailsModal(newFileData, moduleDirPath)
@@ -83,7 +89,8 @@ func main() {
 // 			fileConent = fileProps.BuilderFunc(model.DefaultFileType, *newFileData)
 // 		}
 
-// 		createFileAndWriteData(filePath, fileConent)
+
+// 		// createFileAndWriteData(filePath, fileConent)
 // 	}
 // }
 
@@ -335,26 +342,53 @@ func rewriteTranslateConfig(filePath string, fileData *model.FileData) error {
 	return nil
 }
 
-// func createFileAndWriteData(filePath string, data string) {
-// 	file, err := os.Create(filePath)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
+func createFileAndWriteData(filePath string, data string) {
+	file, err := os.Create(filePath)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-// 	content := []byte(data)
+	content := []byte(data)
 
-// 	if _, err := file.Write(content); err != nil {
-// 		log.Fatal(err)
-// 	}
+	if _, err := file.Write(content); err != nil {
+		log.Fatal(err)
+	}
 
-// 	file.Sync()
-// 	defer file.Close()
-// }
+	file.Sync()
+	defer file.Close()
+}
 
-// func createDir(dirPath string) error {
-// 	if err := os.Mkdir(dirPath, os.ModePerm); err != nil {
-// 		return err
-// 	}
+func createDir(dirPath string) error {
+	if err := os.Mkdir(dirPath, os.ModePerm); err != nil {
+		return err
+	}
 
-// 	return nil
-// }
+	return nil
+}
+
+func generateFoldersInPage(filePath string,folders []string) {
+	for _, dirName := range folders {
+		dirPath := filepath.Join(filePath, dirName);
+
+		createDir(dirPath)
+	}
+}
+
+func generateConfigContent(configFilePath string, newFileData *model.FileData) {
+	fileName :=  fmt.Sprintf(`%vRoutesConfig`, newFileData.PascalCaseFileName);
+
+	rootFiles := [1]model.CustomFileProperty{
+		{Name: fileName, Extensions: []string{"jsx"}, BuilderFunc: fileconfig.CreateConfigFile},
+	}
+
+	for _, fileProps := range rootFiles {
+		fullFileName := model.AddExtensions(fileProps.Name, fileProps.Extensions...)
+
+		filePath := filepath.Join(configFilePath, fullFileName)
+
+		fileConent := fileProps.BuilderFunc(*newFileData)
+
+		createFileAndWriteData(filePath, fileConent)
+	}
+}
+
